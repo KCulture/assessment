@@ -52,4 +52,46 @@ class ApplicationTest {
             }
         }
     }
+
+    @Test
+    fun test2Apple1OrangeInOrder() {
+        withTestApplication({ module() }) {
+            handleRequest(HttpMethod.Get, "/order?appleCount=2&orangeCount=1").apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                val scSummary = Json.decodeFromString<ShoppingCartSummary>(response.content!!)
+                assertEquals("$0.85", scSummary.TotalCost)
+            }
+        }
+    }
+
+    @Test
+    fun test2Apple2OrangeInOrder() {
+        withTestApplication({ module() }) {
+            handleRequest(HttpMethod.Get, "/order?appleCount=2&orangeCount=2").apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                val scSummary = Json.decodeFromString<ShoppingCartSummary>(response.content!!)
+                assertEquals("$1.10", scSummary.TotalCost)
+            }
+        }
+    }
+    @Test
+    fun test2Apple3OrangeInOrder() {
+        withTestApplication({ module() }) {
+            handleRequest(HttpMethod.Get, "/order?appleCount=2&orangeCount=3").apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                val scSummary = Json.decodeFromString<ShoppingCartSummary>(response.content!!)
+                assertEquals("$1.10", scSummary.TotalCost)
+            }
+        }
+    }
+    @Test
+    fun test4Apple6OrangeInOrder() {
+        withTestApplication({ module() }) {
+            handleRequest(HttpMethod.Get, "/order?appleCount=4&orangeCount=6").apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                val scSummary = Json.decodeFromString<ShoppingCartSummary>(response.content!!)
+                assertEquals("$2.20", scSummary.TotalCost)
+            }
+        }
+    }
 }

@@ -11,11 +11,11 @@ import io.ktor.http.*
 import io.ktor.locations.*
 import io.ktor.response.*
 import io.ktor.serialization.*
-import java.math.BigDecimal
 
 const val appleCost = 60
 const val orangeCost = 25
-
+@Location("/order")
+data class AppleOrange(val appleCount:Int,val orangeCount: Int)
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         module()
@@ -27,19 +27,30 @@ fun Application.module(){
     install(ContentNegotiation) {json()}
 
 
-    @Location("/order")
-    data class AppleOrange(val appleCount:Int,val orangeCount: Int)
+
 
     routing {
-        get<AppleOrange>{ route ->
-            val costOfApple = route.appleCount*appleCost;
-            val costOfOrange = route.orangeCount*orangeCost
-            val totalCost = costOfApple+costOfOrange
-            call.respond(HttpStatusCode.OK,
-                ShoppingCartSummary("$${costOfApple/100}.${costOfApple%100}",
-                    "$${costOfOrange/100}.${costOfOrange%100}","$${(totalCost/100)}.${(totalCost%100)}"
-                                .let{ if(it.length <= 4) it.padEnd(5,'0') else it } )
+        get<AppleOrange>{
+            call.respond(HttpStatusCode.OK,discountSummary(it)
             )
         }
     }
+}
+//Normally we would create a service package with a service didn't to keep in one file also not using Dependency Injection
+fun discountSummary(summary:AppleOrange):ShoppingCartSummary{
+    fun fruitDiscountPrice(fruitCount:Int, unitForFreeFruit:Int,unitPrice:Int):Int{
+        val freeFruit = (fruitCount/unitForFreeFruit)
+        return (fruitCount - freeFruit).toInt() * unitPrice
+    }
+
+    fun discountApplePrice(appleCount: Int):Int = fruitDiscountPrice(appleCount,2, appleCost)
+    fun discountOrangePrice(appleCount: Int):Int = fruitDiscountPrice(appleCount,3, orangeCost)
+
+    fun displayValue(unformattedPrice:Int):String{
+        return "$${unformattedPrice / 100}.${unformattedPrice % 100}".let{ if(it.length <= 4) it.padEnd(5,'0') else it }
+    }
+    val costOfApple = discountApplePrice(summary.appleCount);
+    val costOfOrange = discountOrangePrice(summary.orangeCount)
+    val totalCost = costOfApple + costOfOrange
+    return ShoppingCartSummary(displayValue(costOfApple),displayValue(costOfOrange),displayValue(totalCost))
 }
